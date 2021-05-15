@@ -1,15 +1,17 @@
-package linear
+package double
 
 import (
 	"fmt"
 )
 
+// 双向链表节点
 type LinkNode struct {
 	val interface{}
 	prev *LinkNode
 	next *LinkNode
 }
 
+// 双向链表
 func New(prev, next *LinkNode, val interface{}) *LinkNode {
 	return &LinkNode{
 		val: val,
