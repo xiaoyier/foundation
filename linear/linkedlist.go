@@ -1,15 +1,28 @@
 package linear
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type LinkNode struct {
 	val interface{}
+	prev *LinkNode
 	next *LinkNode
 }
 
+func New(prev, next *LinkNode, val interface{}) *LinkNode {
+	return &LinkNode{
+		val: val,
+		prev: prev,
+		next: next,
+	}
+}
+
 type LinkedList struct {
+
 	size int
 	first *LinkNode
+	last *LinkNode
 }
 
 func (ll *LinkedList) Size() int {
@@ -17,82 +30,114 @@ func (ll *LinkedList) Size() int {
 }
 
 func (ll *LinkedList) IsEmpty() bool {
-	return ll.size == 0
+	return ll.size != 0
 }
 
-func (ll *LinkedList) Add(element interface{}) {
-	ll.Insert(ll.size, element)
+func (ll *LinkedList) Add(val interface{}) error {
+	return ll.Insert(ll.size, val)
 }
 
-func (ll *LinkedList) Insert(index int, element interface{}) (ok bool) {
+func (ll *LinkedList) Insert(index int, val interface{}) error {
 	if err := ll.rangeCheckAdd(index); err != nil {
-		return false
+		return err
 	}
-	if index == 0 {
-		ll.first =  &LinkNode{
-			val: element,
-			next: ll.first,
+
+	// 向最后添加节点
+	if index == ll.size {
+		pre, err := ll.nodeOfIndex(index - 1)
+		if err != nil {
+			return err
+		}
+		node := New(pre, nil, val)
+
+		ll.last = node
+		if pre == nil {
+			ll.first = node
+		} else {
+			pre.next = node
 		}
 	} else {
-		preNode, err := ll.nodeOfIndex(index-1)
+		next, err := ll.nodeOfIndex(index)
 		if err != nil {
-			return false
+			return err
 		}
-		preNode.next = &LinkNode{
-			val: element,
-			next: preNode.next,
+
+		prev := next.prev
+		node := New(next.prev, next, val)
+		next.prev = node
+
+		if prev == nil {
+			ll.first = node
+		} else {
+			prev.next = node
 		}
 	}
+
 	ll.size++
-	return true
+	return nil
 }
 
 func (ll *LinkedList) RemoveAt(index int) (interface{}, error) {
 
-	if err := ll.rangeCheck(index); err != nil {
+	node, err := ll.nodeOfIndex(index)
+	if err != nil {
 		return nil, err
 	}
 
-	old := ll.first
-	if index == 0 {
-		ll.first = ll.first.next
+	pre := node.prev
+	next := node.next
+
+	// 首节点
+	if pre == nil {
+		ll.first = next
 	} else {
-		preNode, err := ll.nodeOfIndex(index - 1)
-		if err != nil {
-			return nil, err
-		}
-		old = preNode.next
-		preNode.next = old.next
+		pre.next = next
+	}
+
+	//尾节点
+	if next == nil {
+		ll.last = pre
+	} else {
+		next.prev = pre
 	}
 
 	ll.size--
-	return old, nil
+	return node.val, nil
 }
 
 func (ll *LinkedList) RemoveFirst() (interface{}, error) {
 	return ll.RemoveAt(0)
 }
 
-func (ll *LinkedList) RemoveLast() (interface{}, error) {
+func (ll *LinkedList) RemoveLast() (interface{}, error){
 	return ll.RemoveAt(ll.size-1)
+
 }
 
 func (ll *LinkedList) RemoveAll() {
+
 	ll.first = nil
+	ll.last = nil
 	ll.size = 0
 }
 
-func (ll *LinkedList) Set(index int, element interface{}) error {
-	node, err := ll.nodeOfIndex(index)
-	if err != nil {
-		return err
-	}
-	node.val = element
-	return nil
+func (ll *LinkedList) Set(index int, val interface{}) bool {
+	 node, err := ll.nodeOfIndex(index)
+	 if err != nil {
+	 	return false
+	 }
+
+	 node.val = val
+	 return true
 }
 
-func (ll *LinkedList) IndexOf(element interface{}) int {
-	if element == nil {
+func (ll *LinkedList) Get(index int) (*LinkNode, bool) {
+	node, err := ll.nodeOfIndex(index)
+	return node, err == nil
+}
+
+func (ll *LinkedList) IndexOf(val interface{}) int {
+	if val == nil {
 		node := ll.first
 		for i := 0; i < ll.size; i++ {
 			if node == nil {
@@ -103,7 +148,7 @@ func (ll *LinkedList) IndexOf(element interface{}) int {
 	} else {
 		node := ll.first
 		for i := 0; i < ll.size; i++ {
-			if element == node.val {
+			if val == node.val {
 				return i
 			}
 			node = node.next
@@ -112,23 +157,27 @@ func (ll *LinkedList) IndexOf(element interface{}) int {
 	return -1
 }
 
-func (ll *LinkedList) Get(index int) (interface{}, bool ){
-	node, err := ll.nodeOfIndex(index)
-	return node, err == nil
+func (ll *LinkedList) Contains(val interface{}) bool {
+	return ll.IndexOf(val) != -1
 }
 
-func (ll *LinkedList) Contains(element interface{}) bool {
-	return ll.IndexOf(element) != -1
-}
 
 func (ll *LinkedList) nodeOfIndex(index int) (*LinkNode, error) {
 	if err := ll.rangeCheck(index); err != nil {
 		return nil, err
 	}
 
-	node := ll.first
-	for i := 1; i <= index; i++ {
-		node = node.next
+	var node *LinkNode
+	if index < ll.size >> 1 {
+		node = ll.first
+		for i := 0; i < index; i++ {
+			node = node.next
+		}
+	} else {
+		node = ll.last
+		for i := ll.size - 1; i > index; i-- {
+			node = node.prev
+		}
 	}
 
 	return node, nil
@@ -148,3 +197,5 @@ func (list *LinkedList) rangeCheckAdd(index int) error {
 
 	return nil
 }
+
+
