@@ -1,6 +1,8 @@
 package single
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // 单向循环链表节点
 type SLinkdNode struct {

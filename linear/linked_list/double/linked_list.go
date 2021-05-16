@@ -133,9 +133,12 @@ func (ll *LinkedList) Set(index int, val interface{}) bool {
 	 return true
 }
 
-func (ll *LinkedList) Get(index int) (*LinkNode, bool) {
+func (ll *LinkedList) Get(index int) (interface{}, bool) {
 	node, err := ll.nodeOfIndex(index)
-	return node, err == nil
+	if err != nil {
+		return nil, false
+	}
+	return node.val, true
 }
 
 func (ll *LinkedList) IndexOf(val interface{}) int {
