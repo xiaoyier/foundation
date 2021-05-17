@@ -14,9 +14,18 @@ func NewTreeNode(element interface{}, parent *TreeNode) *TreeNode {
 	}
 }
 
+type Comparator func (element1, element2 interface{}) int
+
 type BinarySearchTree struct {
 	size int
 	root *TreeNode
+	comparator Comparator
+}
+
+func NewBinarySearchTree(comparator Comparator) *BinarySearchTree {
+	return &BinarySearchTree{
+		comparator: comparator,
+	}
 }
 
 func (t *BinarySearchTree) Size() int {
@@ -40,7 +49,7 @@ func (t *BinarySearchTree) Add(element interface{}) {
 	cmp := 0
 	for node != nil {
 		parent = node
-		cmp = t.compare(node.element, element)
+		cmp = t.comparator(node.element, element)
 		if cmp > 0 {
 			node = node.left
 		} else if cmp < 0 {
@@ -59,9 +68,6 @@ func (t *BinarySearchTree) Add(element interface{}) {
 	}
 }
 
-func (t *BinarySearchTree) compare(element1, element2 interface{}) int {
-	return 0
-}
 
 func (t *BinarySearchTree) Remove(element interface{}) {
 
