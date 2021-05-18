@@ -4,6 +4,7 @@ import (
 	"foundation/linear/linked_list/double"
 )
 
+// 栈
 type Stack struct {
 	linkedList *double.LinkedList
 }

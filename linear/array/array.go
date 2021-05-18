@@ -17,6 +17,7 @@ type ArrayItemer interface {
 }
 
 
+// 动态数组
 type ArrayList struct {
 	size int
 	elements []interface{}

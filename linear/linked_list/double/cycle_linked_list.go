@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// 双向循环链表(双向环形链表)
 type CLinkedList struct {
 
 	size int

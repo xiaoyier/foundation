@@ -8,7 +8,7 @@ type SCLinkdNode struct {
 	next *SCLinkdNode
 }
 
-// 单向循环链表
+// 单向循环链表(单向环形链表)
 type SCLinkedList struct {
 	size int
 	first *SCLinkdNode

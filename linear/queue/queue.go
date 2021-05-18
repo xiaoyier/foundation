@@ -2,6 +2,7 @@ package queue
 
 import "foundation/linear/linked_list/double"
 
+// 队列
 type Queue struct {
 	linkedList *double.LinkedList
 }

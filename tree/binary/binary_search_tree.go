@@ -16,6 +16,7 @@ func NewTreeNode(element interface{}, parent *TreeNode) *TreeNode {
 
 type Comparator func (element1, element2 interface{}) int
 
+// 二叉搜索树
 type BinarySearchTree struct {
 	size int
 	root *TreeNode

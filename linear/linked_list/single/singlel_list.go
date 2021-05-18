@@ -4,13 +4,13 @@ import (
 	"fmt"
 )
 
-// 单向循环链表节点
+// 单向链表节点
 type SLinkdNode struct {
 	val interface{}
 	next *SLinkdNode
 }
 
-// 单向循环链表
+// 单向链表
 type SLinkedList struct {
 	size int
 	first *SLinkdNode
