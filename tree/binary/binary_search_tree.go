@@ -2,7 +2,7 @@ package binary
 
 import (
 	"fmt"
-	 "foundation/linear/queue"
+	"foundation/linear/queue"
 )
 
 // 遍历方式
@@ -177,6 +177,10 @@ func (t *BinarySearchTree) levelOrder(watcher *nodeWatch) {
 	q.Enqueue(t.root)
 	for !q.IsEmpty() {
 		 node := q.Dequeue().(*TreeNode)
+		 watcher.stop = watcher.watcher(node.element)
+		 if watcher.stop {
+			 return
+		 }
 		 if node.left != nil {
 		 	q.Enqueue(node.left)
 		 }
@@ -184,6 +188,95 @@ func (t *BinarySearchTree) levelOrder(watcher *nodeWatch) {
 		 	q.Enqueue(node.right)
 		 }
 	}
+}
+
+func (t *BinarySearchTree) IsCompleteTree() bool {
+	return IsCompleteTree(t.root)
+}
+
+// 是否是完全二叉树
+// 完全二叉树的特征: 叶子节点只在最后2层，且度为1的节点最多只能有1个
+func IsCompleteTree(root *TreeNode) bool {
+
+	q := queue.NewQueue()
+	q.Enqueue(root)
+
+	leaf := false
+	for !q.IsEmpty() {
+		node := q.Dequeue().(*TreeNode)
+		if node.left != nil {
+			if leaf {
+				return false
+			}
+			q.Enqueue(node.left)
+		} else if node.right != nil {
+			return false
+		}
+
+		if node.right != nil {
+			if leaf {
+				return false
+			}
+			q.Enqueue(node.right)
+		} else {
+			leaf = true
+		}
+	}
+
+}
+
+func (t *BinarySearchTree) Height() int {
+	//return Height(t.root)
+	return Height2(t.root)
+}
+
+// 递归计算二叉树的高度
+func Height(node *TreeNode) int {
+	if node == nil {
+		return 0
+	}
+
+	// 递归计算
+	return 1 + max(Height(node.left), Height(node.right))
+}
+
+// 遍历计算二叉树的高度
+func Height2(node *TreeNode) int {
+	if node == nil {
+		return 0
+	}
+
+	q := queue.NewQueue()
+	q.Enqueue(node)
+	height, levelSize := 0, 1
+	for !q.IsEmpty() {
+
+		node := q.Dequeue().(*TreeNode)
+		levelSize--
+
+		if node.left != nil {
+			q.Enqueue(node.left)
+		}
+
+		if node.right != nil {
+			q.Enqueue(node.right)
+		}
+
+		if levelSize == 0 {
+			height++
+			levelSize = q.Size()
+		}
+	}
+
+	return height
+}
+
+func max(num1, num2 int) int {
+	if num1 > num2 {
+		return num1
+	}
+
+	return num2
 }
 
 
