@@ -11,7 +11,6 @@ type LinkNode struct {
 	next *LinkNode
 }
 
-// 双向链表
 func New(prev, next *LinkNode, val interface{}) *LinkNode {
 	return &LinkNode{
 		val: val,
@@ -20,6 +19,7 @@ func New(prev, next *LinkNode, val interface{}) *LinkNode {
 	}
 }
 
+// 双向链表
 type LinkedList struct {
 
 	size int

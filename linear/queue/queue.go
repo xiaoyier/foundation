@@ -7,6 +7,12 @@ type Queue struct {
 	linkedList *double.LinkedList
 }
 
+func NewQueue() *Queue {
+	return &Queue{
+		linkedList: &double.LinkedList{},
+	}
+}
+
 func (q *Queue) Size() int {
 	return q.linkedList.Size()
 }
