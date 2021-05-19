@@ -20,7 +20,7 @@ type NodeWatcher func (element interface{}) bool
 
 type nodeWatch struct {
 	stop bool
-	watcher func (element interface{}) bool
+	watcher NodeWatcher
 }
 
 // 二叉树节点
@@ -36,6 +36,21 @@ func NewTreeNode(element interface{}, parent *TreeNode) *TreeNode {
 		element: element,
 		parent: parent,
 	}
+}
+
+func (n *TreeNode) isLeaf() bool {
+	return n.left == nil && n.right == nil
+}
+
+func (n *TreeNode) degree() int {
+	degree := 0
+	if n.left != nil {
+		degree += 1
+	}
+	if n.right != nil {
+		degree += 1
+	}
+	return degree
 }
 
 // 二叉搜索树
@@ -60,6 +75,10 @@ func (t *BinarySearchTree) IsEmpty() bool {
 }
 
 func (t *BinarySearchTree) Add(element interface{}) {
+
+	if element == nil {
+		return
+	}
 	// 添加根节点
 	if t.root == nil {
 		t.root = NewTreeNode(element, nil)
@@ -93,8 +112,52 @@ func (t *BinarySearchTree) Add(element interface{}) {
 
 
 func (t *BinarySearchTree) Remove(element interface{}) {
+	if element == nil {
+		return
+	}
 
+	// 获取node
+	node := t.nodeOf(element)
+	if node == nil {
+		return
+	}
+
+	// 度为2的节点
+	if node.degree() == 2 {
+		//找到其前驱或者后继节点
+		predcessor := t.predcessor(node)
+		// 覆盖内容
+		node.element = predcessor.element
+		// 删除 前驱节点
+		node = predcessor
+	}
+	// 如果是叶子节点
+	if node.isLeaf() {
+		if node.parent == nil {
+			t.root = nil
+		} else if node == node.parent.left {
+			node.parent.left = nil
+		} else {
+			node.parent.right = nil
+		}
+	} else {
+		//度为1的节点，找到替代自己的子节点
+		child := node.left
+		if node.right != nil {
+			child = node.right
+		}
+
+		child.parent = node.parent
+		if node.parent == nil {
+			t.root = child
+		} else if node == node.parent.left {
+			node.parent.left = child
+		} else {
+			node.parent.right = child
+		}
+	}
 }
+
 
 func (t *BinarySearchTree) Clear() {
 	t.root = nil
@@ -102,7 +165,72 @@ func (t *BinarySearchTree) Clear() {
 }
 
 func (t *BinarySearchTree) Contains(element interface{}) bool {
-	return false
+	return t.nodeOf(element) != nil
+}
+
+func (t *BinarySearchTree) nodeOf(element interface{}) *TreeNode {
+
+	node := t.root
+	for node != nil {
+		cmp := t.comparator(node.element, element)
+		if cmp == 0 {
+			return node
+		} else if cmp > 0 {
+			node = node.left
+		} else {
+			node = node.right
+		}
+	}
+
+	return node
+}
+
+// 获取前驱节点
+func (t *BinarySearchTree) predcessor(node *TreeNode) *TreeNode {
+	// node.left.right.right.right.right
+	if node == nil {
+		return nil
+	}
+
+	// 拥有左子树
+	if node.left != nil {
+		node = node.left
+		for node.right != nil {
+			node = node.right
+		}
+		return node
+	} else {
+		// 无左子树，需要从父节点往上找
+		for node.parent != nil && node.parent.left == node {
+			node = node.parent
+		}
+
+		// node.parent == nil(return nil) || node.parent.right == node (return node.parent)
+		return node.parent
+	}
+}
+
+//获取后继节点
+func (t *BinarySearchTree) successor(node *TreeNode) *TreeNode {
+	// node.right.left.left.left.left
+	if node == nil {
+		return nil
+	}
+	if node.right != nil {
+		node = node.right
+		for node.left != nil {
+			node = node.left
+		}
+		return node
+	} else {
+		// 无右子树，需要从父节点往上找
+		for node.parent != nil && node.parent.right == node {
+			node = node.parent
+		}
+
+		// node.parent == nil(return nil) || node.parent.left == node (return node.parent)
+		return node.parent
+	}
 }
 
 func (t *BinarySearchTree) Iterate(traversal BSTTraversalOrder, watcher NodeWatcher) {
@@ -223,6 +351,7 @@ func IsCompleteTree(root *TreeNode) bool {
 		}
 	}
 
+	return true
 }
 
 func (t *BinarySearchTree) Height() int {
