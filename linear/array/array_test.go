@@ -6,6 +6,43 @@ import (
 	"unsafe"
 )
 
+type testStruct struct {
+	next *testStruct
+	str string
+	c []int
+}
+
+func TestString(t *testing.T) {
+	//a := 5
+	//b := &a
+	//c := &a
+	//d := 5
+	//e := 10
+	//fmt.Printf("%p, %p, %p, %p, %p, %p, %p", &a, b, c, &b, &c, &d, &e)
+
+	//t1 := &testStruct{
+	//	next: nil,
+	//	str: "111",
+	//	c: []int{1},
+	//}
+	//t2 := &testStruct{
+	//	next: t1,
+	//	str: "222",
+	//	c: []int{2},
+	//}
+	//t3 := t2
+	//t4 := &testStruct{
+	//	next: t1,
+	//	str: "222",
+	//	c: []int{2},
+	//}
+	//fmt.Println(t2 == t3, t4 == t3, t2.next == t1)
+
+	var str1 string
+	str2 := new(string)
+	fmt.Printf("%p, %p, %p, %p, [%v], [%v], [%v]" , &str1, str2, &str2, &(*str2), str1, str2, *str2)
+}
+
 func TestArrayList(t *testing.T) {
 
 	pri := []interface{}{1,2,3,4,5}

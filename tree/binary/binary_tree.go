@@ -16,33 +16,47 @@ const (
 )
 
 
-type NodeWatcher func (element interface{}) bool
+type WatchFunc func(element interface{}) bool
 
-type nodeWatch struct {
+type nodeWatcher struct {
+	watch WatchFunc
 	stop bool
-	watcher NodeWatcher
+}
+
+
+type TreeNode interface {
+	IsLeaf() bool
+	Degree() int
+	Left() TreeNode
+	Right() TreeNode
+	Parent() TreeNode
+	Element() interface{}
+	SetLeft(node TreeNode)
+	SetRight(node TreeNode)
+	SetParent(node TreeNode)
+	SetElement(element interface{})
 }
 
 // 二叉树节点
-type TreeNode struct {
+type treeNode struct {
 	element interface{}
-	parent *TreeNode
-	left *TreeNode
-	right *TreeNode
+	parent TreeNode
+	left TreeNode
+	right TreeNode
 }
 
-func NewTreeNode(element interface{}, parent *TreeNode) *TreeNode {
-	return &TreeNode{
+func NewTreeNode(element interface{}, parent TreeNode) TreeNode {
+	return &treeNode{
 		element: element,
 		parent: parent,
 	}
 }
 
-func (n *TreeNode) isLeaf() bool {
+func (n *treeNode) IsLeaf() bool {
 	return n.left == nil && n.right == nil
 }
 
-func (n *TreeNode) degree() int {
+func (n *treeNode) Degree() int {
 	degree := 0
 	if n.left != nil {
 		degree += 1
@@ -53,185 +67,223 @@ func (n *TreeNode) degree() int {
 	return degree
 }
 
-// 二叉搜索树
-type BinaryTree struct {
-	size int
-	root *TreeNode
+func (n *treeNode) Left() TreeNode {
+	return n.left
 }
 
-func (t *BinaryTree) Size() int {
+func (n *treeNode) Right() TreeNode {
+	return n.right
+}
+
+func (n *treeNode) Parent() TreeNode {
+	return n.parent
+}
+
+func (n *treeNode) Element() interface{} {
+	return n.element
+}
+
+func (n *treeNode) SetLeft(node TreeNode) {
+	n.left = node
+}
+func (n *treeNode) SetRight(node TreeNode) {
+	n.right = node
+}
+
+func (n *treeNode) SetParent(node TreeNode) {
+	n.parent = node
+}
+
+func (n *treeNode) SetElement(element interface{}) {
+	n.element = element
+}
+
+type BinaryTree interface {
+	Size() int
+	IsEmpty() bool
+	Clear()
+	IsCompleteTree() bool
+	Height() int
+}
+
+type binaryTree struct {
+	size int
+	root TreeNode
+}
+
+func (t *binaryTree) Size() int {
 	return t.size
 }
 
-func (t *BinaryTree) IsEmpty() bool {
+func (t *binaryTree) IsEmpty() bool {
 	return t.size == 0
 }
 
-func (t *BinaryTree) Clear() {
+func (t *binaryTree) Clear() {
 	t.root = nil
 	t.size = 0
 }
 
-// 获取前驱节点
-func (t *BinaryTree) predcessor(node *TreeNode) *TreeNode {
+// get predcessor node
+func (t *binaryTree) predcessor(node TreeNode) TreeNode {
 	// node.left.right.right.right.right
 	if node == nil {
 		return nil
 	}
 
 	// 拥有左子树
-	if node.left != nil {
-		node = node.left
-		for node.right != nil {
-			node = node.right
+	if node.Left() != nil {
+		node = node.Left()
+		for node.Right() != nil {
+			node = node.Right()
 		}
 		return node
 	} else {
 		// 无左子树，需要从父节点往上找
-		for node.parent != nil && node.parent.left == node {
-			node = node.parent
+		for node.Parent() != nil && node.Parent().Left() == node {
+			node = node.Parent()
 		}
 
 		// node.parent == nil(return nil) || node.parent.right == node (return node.parent)
-		return node.parent
+		return node.Parent()
 	}
 }
 
 //获取后继节点
-func (t *BinaryTree) successor(node *TreeNode) *TreeNode {
+func (t *binaryTree) successor(node TreeNode) TreeNode {
 	// node.right.left.left.left.left
 	if node == nil {
 		return nil
 	}
-	if node.right != nil {
-		node = node.right
-		for node.left != nil {
-			node = node.left
+	if node.Right() != nil {
+		node = node.Right()
+		for node.Left() != nil {
+			node = node.Left()
 		}
 		return node
 	} else {
 		// 无右子树，需要从父节点往上找
-		for node.parent != nil && node.parent.right == node {
-			node = node.parent
+		for node.Parent() != nil && node.Parent().Right() == node {
+			node = node.Parent()
 		}
 
 		// node.parent == nil(return nil) || node.parent.left == node (return node.parent)
-		return node.parent
+		return node.Parent()
 	}
 }
 
-func (t *BinaryTree) Iterate(traversal BSTTraversalOrder, watcher NodeWatcher) {
-	watch := &nodeWatch{
-		watcher: watcher,
+func (t *binaryTree) Iterate(traversal BSTTraversalOrder, watch WatchFunc) {
+	watcher := &nodeWatcher{
+		watch: watch,
 	}
 	switch traversal {
 	case BSTTraversalPreOrder:
-		t.preOrder(watch)
+		t.preOrder(watcher)
 	case BSTTraversalInOrder:
-		t.inOrder(watch)
+		t.inOrder(watcher)
 	case BSTTraversalPostOrder:
-		t.postOrder(watch)
+		t.postOrder(watcher)
 	case BSTTraversalLevelOrder:
-		t.levelOrder(watch)
+		t.levelOrder(watcher)
 	default:
 		fmt.Println("BSTTraversalOrder type error, choice:[BSTTraversalPreOrder, BSTTraversalInOrder, BSTTraversalPostOrder, BSTTraversalLevelOrder]")
 	}
 }
 
-func (t *BinaryTree) preOrder(watcher *nodeWatch) {
+func (t *binaryTree) preOrder(watcher *nodeWatcher) {
 	t.preOrderWithNode(t.root, watcher)
 }
 
-func (t *BinaryTree) preOrderWithNode(node *TreeNode, watcher *nodeWatch) {
+func (t *binaryTree) preOrderWithNode(node TreeNode, watcher *nodeWatcher) {
 	if node == nil || watcher.stop {
 		return
 	}
 
-	watcher.stop = watcher.watcher(node.element)
-	t.preOrderWithNode(node.left, watcher)
-	t.preOrderWithNode(node.right, watcher)
+	watcher.stop = watcher.watch(node.Element())
+	t.preOrderWithNode(node.Left(), watcher)
+	t.preOrderWithNode(node.Right(), watcher)
 }
 
-func (t *BinaryTree) inOrder(watcher *nodeWatch) {
+func (t *binaryTree) inOrder(watcher *nodeWatcher) {
 	t.inOrderWithNode(t.root, watcher)
 }
 
-func (t *BinaryTree) inOrderWithNode(node *TreeNode, watcher *nodeWatch) {
+func (t *binaryTree) inOrderWithNode(node TreeNode, watcher *nodeWatcher) {
 	if node == nil || watcher.stop {
 		return
 	}
 
-	t.inOrderWithNode(node.left, watcher)
+	t.inOrderWithNode(node.Left(), watcher)
 	if watcher.stop {
 		return
 	}
-	watcher.stop = watcher.watcher(node.element)
-	t.inOrderWithNode(node.right, watcher)
+	watcher.stop = watcher.watch(node.Element())
+	t.inOrderWithNode(node.Right(), watcher)
 }
 
-func (t *BinaryTree) postOrder(watcher *nodeWatch) {
+func (t *binaryTree) postOrder(watcher *nodeWatcher) {
 	t.postOrderWithNode(t.root, watcher)
 }
 
-func (t *BinaryTree) postOrderWithNode(node *TreeNode, watcher *nodeWatch) {
+func (t *binaryTree) postOrderWithNode(node TreeNode, watcher *nodeWatcher) {
 	if node == nil || watcher.stop {
 		return
 	}
 
-	t.postOrderWithNode(node.left, watcher)
-	t.postOrderWithNode(node.right, watcher)
+	t.postOrderWithNode(node.Left(), watcher)
+	t.postOrderWithNode(node.Right(), watcher)
 	if watcher.stop {
 		return
 	}
-	watcher.stop = watcher.watcher(node.element)
+	watcher.stop = watcher.watch(node.Element())
 }
 
-func (t *BinaryTree) levelOrder(watcher *nodeWatch) {
+func (t *binaryTree) levelOrder(watcher *nodeWatcher) {
 	q := queue.NewQueue()
 	q.Enqueue(t.root)
 	for !q.IsEmpty() {
-		node := q.Dequeue().(*TreeNode)
-		watcher.stop = watcher.watcher(node.element)
+		node := q.Dequeue().(TreeNode)
+		watcher.stop = watcher.watch(node.Element())
 		if watcher.stop {
 			return
 		}
-		if node.left != nil {
-			q.Enqueue(node.left)
+		if node.Left() != nil {
+			q.Enqueue(node.Left())
 		}
-		if node.right != nil {
-			q.Enqueue(node.right)
+		if node.Right() != nil {
+			q.Enqueue(node.Right())
 		}
 	}
 }
 
-func (t *BinaryTree) IsCompleteTree() bool {
+func (t *binaryTree) IsCompleteTree() bool {
 	return IsCompleteTree(t.root)
 }
 
 // 是否是完全二叉树
 // 完全二叉树的特征: 叶子节点只在最后2层，且度为1的节点最多只能有1个
-func IsCompleteTree(root *TreeNode) bool {
+func IsCompleteTree(root TreeNode) bool {
 
 	q := queue.NewQueue()
 	q.Enqueue(root)
 
 	leaf := false
 	for !q.IsEmpty() {
-		node := q.Dequeue().(*TreeNode)
-		if node.left != nil {
+		node := q.Dequeue().(TreeNode)
+		if node.Left() != nil {
 			if leaf {
 				return false
 			}
-			q.Enqueue(node.left)
-		} else if node.right != nil {
+			q.Enqueue(node.Left())
+		} else if node.Right() != nil {
 			return false
 		}
 
-		if node.right != nil {
+		if node.Right() != nil {
 			if leaf {
 				return false
 			}
-			q.Enqueue(node.right)
+			q.Enqueue(node.Right())
 		} else {
 			leaf = true
 		}
@@ -240,23 +292,23 @@ func IsCompleteTree(root *TreeNode) bool {
 	return true
 }
 
-func (t *BinaryTree) Height() int {
+func (t *binaryTree) Height() int {
 	//return Height(t.root)
 	return Height2(t.root)
 }
 
 // 递归计算二叉树的高度
-func Height(node *TreeNode) int {
+func Height(node TreeNode) int {
 	if node == nil {
 		return 0
 	}
 
 	// 递归计算
-	return 1 + max(Height(node.left), Height(node.right))
+	return 1 + max(Height(node.Left()), Height(node.Right()))
 }
 
 // 遍历计算二叉树的高度
-func Height2(node *TreeNode) int {
+func Height2(node TreeNode) int {
 	if node == nil {
 		return 0
 	}
@@ -266,15 +318,15 @@ func Height2(node *TreeNode) int {
 	height, levelSize := 0, 1
 	for !q.IsEmpty() {
 
-		node := q.Dequeue().(*TreeNode)
+		node := q.Dequeue().(TreeNode)
 		levelSize--
 
-		if node.left != nil {
-			q.Enqueue(node.left)
+		if node.Left() != nil {
+			q.Enqueue(node.Left())
 		}
 
-		if node.right != nil {
-			q.Enqueue(node.right)
+		if node.Right() != nil {
+			q.Enqueue(node.Right())
 		}
 
 		if levelSize == 0 {

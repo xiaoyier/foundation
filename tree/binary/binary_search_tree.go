@@ -2,24 +2,33 @@ package binary
 
 
 
-type NodeComparator func (element1, element2 interface{}) int
+type NodeComparator interface {
+	compare(element1, element2 interface{}) int
+}
 
-
+type BinarySearchTree interface {
+	BinaryTree
+	Add(element interface{})
+	Remove(element interface{})
+	Contains(element interface{}) bool
+	AfterAdd(node TreeNode)
+	AfterRemove(node TreeNode)
+}
 
 // 二叉搜索树
-type BinarySearchTree struct {
+type binarySearchTree struct {
 	BinaryTree
 	comparator NodeComparator
 }
 
-func NewBinarySearchTree(comparator NodeComparator) *BinarySearchTree {
-	return &BinarySearchTree{
+func NewBinarySearchTree(comparator NodeComparator) BinarySearchTree {
+	return &binarySearchTree{
 		comparator: comparator,
 	}
 }
 
 
-func (t *BinarySearchTree) Add(element interface{}) {
+func (t *binarySearchTree) Add(element interface{}) {
 
 	if element == nil {
 		return
@@ -36,27 +45,29 @@ func (t *BinarySearchTree) Add(element interface{}) {
 	cmp := 0
 	for node != nil {
 		parent = node
-		cmp = t.comparator(node.element, element)
+		cmp = t.comparator.compare(node.Element(), element)
 		if cmp > 0 {
-			node = node.left
+			node = node.Left()
 		} else if cmp < 0 {
-			node = node.right
+			node = node.Right()
 		} else {
-			node.element = element
+			node.SetElement(element)
 			return
 		}
 	}
 
 	newNode := NewTreeNode(element, parent)
 	if cmp > 0 {
-		parent.left = newNode
+		parent.SetLeft(newNode)
 	} else {
-		parent.right = newNode
+		parent.SetParent(newNode)
 	}
+
+	t.AfterAdd(node)
 }
 
 
-func (t *BinarySearchTree) Remove(element interface{}) {
+func (t *binarySearchTree) Remove(element interface{}) {
 	if element == nil {
 		return
 	}
@@ -68,61 +79,62 @@ func (t *BinarySearchTree) Remove(element interface{}) {
 	}
 
 	// 度为2的节点
-	if node.degree() == 2 {
+	if node.Degree() == 2 {
 		//找到其前驱或者后继节点
 		predcessor := t.predcessor(node)
 		// 覆盖内容
-		node.element = predcessor.element
+		node.SetElement(predcessor.Element())
 		// 删除 前驱节点
 		node = predcessor
 	}
-	// 如果是叶子节点
-	if node.isLeaf() {
-		if node.parent == nil {
-			t.root = nil
-		} else if node == node.parent.left {
-			node.parent.left = nil
-		} else {
-			node.parent.right = nil
-		}
-	} else {
-		//度为1的节点，找到替代自己的子节点
-		child := node.left
-		if node.right != nil {
-			child = node.right
-		}
 
-		child.parent = node.parent
-		if node.parent == nil {
-			t.root = child
-		} else if node == node.parent.left {
-			node.parent.left = child
-		} else {
-			node.parent.right = child
-		}
+	child := node.Left()
+	if node.Right() != nil {
+		child = node.Right()
 	}
+
+	if child != nil {
+		child.SetParent(node.Parent())
+	}
+
+	if node.Parent() == nil {
+		t.root = child
+	} else if node == node.Parent().Left() {
+		node.Parent().SetLeft(child)
+	} else {
+		node.Parent().SetRight(child)
+	}
+	t.AfterRemove(node)
 }
 
 
-func (t *BinarySearchTree) Contains(element interface{}) bool {
+func (t *binarySearchTree) Contains(element interface{}) bool {
 	return t.nodeOf(element) != nil
 }
 
-func (t *BinarySearchTree) nodeOf(element interface{}) *TreeNode {
+func (t *binarySearchTree) nodeOf(element interface{}) TreeNode {
 
 	node := t.root
 	for node != nil {
-		cmp := t.comparator(node.element, element)
+		cmp := t.comparator.compare(node.Element(), element)
 		if cmp == 0 {
 			return node
 		} else if cmp > 0 {
-			node = node.left
+			node = node.Left()
 		} else {
-			node = node.right
+			node = node.Right()
 		}
 	}
 
 	return node
+}
+
+func (t *binarySearchTree) AfterAdd(node TreeNode) {
+	// implements by sub struct
+}
+
+func (t *binarySearchTree) AfterRemove(node TreeNode) {
+	// implements by sub struct
 }
 
 
