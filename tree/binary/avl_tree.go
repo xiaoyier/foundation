@@ -1,6 +1,11 @@
 package binary
 
-import "math"
+import (
+	"math"
+	"net"
+	"unsafe"
+)
+
 
 type AVLTreeNode struct {
 	TreeNode
@@ -9,43 +14,43 @@ type AVLTreeNode struct {
 
 func (n *AVLTreeNode) isBlanced() bool {
 	leftHeight, rightHeight := 0, 0
-	if n.Left() != nil {
-		leftHeight = n.Left().(*AVLTreeNode).height
+	if n.left != nil {
+		leftHeight = (*AVLTreeNode)(unsafe.Pointer(n.left)).height
 	}
-	if n.Right() != nil {
-		rightHeight = n.Right().(*AVLTreeNode).height
+	if n.right != nil {
+		rightHeight = (*AVLTreeNode)(unsafe.Pointer(n.right)).height
 	}
 	return math.Abs(float64(leftHeight-rightHeight)) < 1
 }
 
 func (n *AVLTreeNode) updateHeight() {
 	leftHeight, rightHeight := 0, 0
-	if n.Left() != nil {
-		leftHeight = n.Left().(*AVLTreeNode).height
+	if n.left != nil {
+		leftHeight = (*AVLTreeNode)(unsafe.Pointer(n.left)).height
 	}
-	if n.Right() != nil {
-		rightHeight = n.Right().(*AVLTreeNode).height
+	if n.right != nil {
+		rightHeight = (*AVLTreeNode)(unsafe.Pointer(n.right)).height
 	}
 	n.height = max(leftHeight, rightHeight) + 1
 }
 
 func (n *AVLTreeNode) tallerChildNode() *AVLTreeNode {
 	leftHeight, rightHeight := 0, 0
-	if n.Left() != nil {
-		leftHeight = n.Left().(*AVLTreeNode).height
+	if n.left != nil {
+		leftHeight = (*AVLTreeNode)(unsafe.Pointer(n.left)).height
 	}
-	if n.Right() != nil {
-		rightHeight = n.Right().(*AVLTreeNode).height
+	if n.right != nil {
+		rightHeight = (*AVLTreeNode)(unsafe.Pointer(n.left)).height
 	}
 	if leftHeight > rightHeight {
-		return n.Left().(*AVLTreeNode)
+		return (*AVLTreeNode)(unsafe.Pointer(n.left))
 	}
-	return n.Right().(*AVLTreeNode)
+	return (*AVLTreeNode)(unsafe.Pointer(n.left))
 }
 
 
 type AVLTree struct {
-	BinarySearchTree
+	*BinarySearchTree
 }
 
 func NewAVLTree(comparator NodeComparator) *AVLTree {
@@ -54,7 +59,8 @@ func NewAVLTree(comparator NodeComparator) *AVLTree {
 	}
 }
 
-func (t *AVLTree) AfterAdd(node TreeNode) {
+func (t *AVLTree) Add(element interface{}) {
+	node :=  t.BinarySearchTree.Add(element)
 	for node != nil {
 		if t.isBalanced(node) {
 			t.updateHeight(node)
@@ -62,24 +68,24 @@ func (t *AVLTree) AfterAdd(node TreeNode) {
 			t.reblance(node)
 			break
 		}
-		node = node.Parent()
+		node = node.parent
 	}
 }
 
-func (t *AVLTree) AfterRemove(node TreeNode) {
+func (t *AVLTree) AfterRemove(node *TreeNode) {
 
-	node = node.Parent()
+	node = node.parent()
 	for  node != nil {
 		if t.isBalanced(node) {
 			t.updateHeight(node)
 		} else {
 			t.reblance(node)
 		}
-		node = node.Parent()
+		node = node.parent()
 	}
 }
 
-func (t *AVLTree) reblance(node TreeNode) {
+func (t *AVLTree) reblance(node *TreeNode) {
 	g := node.(*AVLTreeNode)
 	p := g.tallerChildNode()
 	n := p.tallerChildNode()
@@ -104,7 +110,7 @@ func (t *AVLTree) rotateLeft(g,p,n *AVLTreeNode) {
 	g.SetRight(p.Left())
 	p.SetLeft(g)
 
-	bst := t.BinarySearchTree.(*binarySearchTree)
+	bst := t.BinarySearchTree.(*BinarySearchTree)
 	if g.Parent() == nil {
 		t.r
 	}
@@ -115,14 +121,17 @@ func (t *AVLTree) rotateLeft(g,p,n *AVLTreeNode) {
 func (t *AVLTree) rotateRight(g,p,n *AVLTreeNode) {
 	g.SetLeft(p.Right())
 	p.SetRight(g)
+	net.DialTCP()
 }
 
-func (t *AVLTree) updateHeight(node TreeNode) {
-	node.(*AVLTreeNode).updateHeight()
+func (t *AVLTree) updateHeight(node *TreeNode) {
+	avlNode := (*AVLTreeNode)(unsafe.Pointer(node))
+	avlNode.updateHeight()
 }
 
-func (t *AVLTree) isBalanced(node TreeNode) bool {
-	return node.(*AVLTreeNode).isBlanced()
+func (t *AVLTree) isBalanced(node *TreeNode) bool {
+	avlNode := (*AVLTreeNode)(unsafe.Pointer(node))
+	return avlNode.isBlanced()
 }
 
 

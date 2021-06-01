@@ -24,39 +24,26 @@ type nodeWatcher struct {
 }
 
 
-type TreeNode interface {
-	IsLeaf() bool
-	Degree() int
-	Left() TreeNode
-	Right() TreeNode
-	Parent() TreeNode
-	Element() interface{}
-	SetLeft(node TreeNode)
-	SetRight(node TreeNode)
-	SetParent(node TreeNode)
-	SetElement(element interface{})
-}
-
 // 二叉树节点
-type treeNode struct {
+type TreeNode struct {
 	element interface{}
-	parent TreeNode
-	left TreeNode
-	right TreeNode
+	parent *TreeNode
+	left *TreeNode
+	right *TreeNode
 }
 
-func NewTreeNode(element interface{}, parent TreeNode) TreeNode {
-	return &treeNode{
+func NewTreeNode(element interface{}, parent *TreeNode) *TreeNode {
+	return &TreeNode{
 		element: element,
 		parent: parent,
 	}
 }
 
-func (n *treeNode) IsLeaf() bool {
+func (n *TreeNode) IsLeaf() bool {
 	return n.left == nil && n.right == nil
 }
 
-func (n *treeNode) Degree() int {
+func (n *TreeNode) Degree() int {
 	degree := 0
 	if n.left != nil {
 		degree += 1
@@ -67,112 +54,73 @@ func (n *treeNode) Degree() int {
 	return degree
 }
 
-func (n *treeNode) Left() TreeNode {
-	return n.left
-}
-
-func (n *treeNode) Right() TreeNode {
-	return n.right
-}
-
-func (n *treeNode) Parent() TreeNode {
-	return n.parent
-}
-
-func (n *treeNode) Element() interface{} {
-	return n.element
-}
-
-func (n *treeNode) SetLeft(node TreeNode) {
-	n.left = node
-}
-func (n *treeNode) SetRight(node TreeNode) {
-	n.right = node
-}
-
-func (n *treeNode) SetParent(node TreeNode) {
-	n.parent = node
-}
-
-func (n *treeNode) SetElement(element interface{}) {
-	n.element = element
-}
-
-type BinaryTree interface {
-	Size() int
-	IsEmpty() bool
-	Clear()
-	IsCompleteTree() bool
-	Height() int
-}
-
-type binaryTree struct {
+type BinaryTree struct {
 	size int
-	root TreeNode
+	root *TreeNode
 }
 
-func (t *binaryTree) Size() int {
+func (t *BinaryTree) Size() int {
 	return t.size
 }
 
-func (t *binaryTree) IsEmpty() bool {
+func (t *BinaryTree) IsEmpty() bool {
 	return t.size == 0
 }
 
-func (t *binaryTree) Clear() {
+func (t *BinaryTree) Clear() {
 	t.root = nil
 	t.size = 0
 }
 
 // get predcessor node
-func (t *binaryTree) predcessor(node TreeNode) TreeNode {
+func (t *BinaryTree) predcessor(node *TreeNode) *TreeNode {
 	// node.left.right.right.right.right
 	if node == nil {
 		return nil
 	}
 
 	// 拥有左子树
-	if node.Left() != nil {
-		node = node.Left()
-		for node.Right() != nil {
-			node = node.Right()
+	if node.left != nil {
+		node = node.left
+		for node.right != nil {
+			node = node.right
 		}
 		return node
 	} else {
 		// 无左子树，需要从父节点往上找
-		for node.Parent() != nil && node.Parent().Left() == node {
-			node = node.Parent()
+		for node.parent != nil && node.parent.left == node {
+			node = node.parent
 		}
 
 		// node.parent == nil(return nil) || node.parent.right == node (return node.parent)
-		return node.Parent()
+		return node.parent
 	}
 }
 
 //获取后继节点
-func (t *binaryTree) successor(node TreeNode) TreeNode {
+func (t *BinaryTree) successor(node *TreeNode) *TreeNode {
 	// node.right.left.left.left.left
 	if node == nil {
 		return nil
 	}
-	if node.Right() != nil {
-		node = node.Right()
-		for node.Left() != nil {
-			node = node.Left()
+	if node.right != nil {
+		node = node.right
+		for node.left != nil {
+			node = node.left
 		}
 		return node
 	} else {
 		// 无右子树，需要从父节点往上找
-		for node.Parent() != nil && node.Parent().Right() == node {
-			node = node.Parent()
+		for node.parent != nil && node.parent.right == node {
+			node = node.parent
 		}
 
 		// node.parent == nil(return nil) || node.parent.left == node (return node.parent)
-		return node.Parent()
+		return node.parent
 	}
 }
 
-func (t *binaryTree) Iterate(traversal BSTTraversalOrder, watch WatchFunc) {
+func (t *BinaryTree) Iterate(traversal BSTTraversalOrder, watch WatchFunc) {
 	watcher := &nodeWatcher{
 		watch: watch,
 	}
@@ -190,79 +138,79 @@ func (t *binaryTree) Iterate(traversal BSTTraversalOrder, watch WatchFunc) {
 	}
 }
 
-func (t *binaryTree) preOrder(watcher *nodeWatcher) {
+func (t *BinaryTree) preOrder(watcher *nodeWatcher) {
 	t.preOrderWithNode(t.root, watcher)
 }
 
-func (t *binaryTree) preOrderWithNode(node TreeNode, watcher *nodeWatcher) {
+func (t *BinaryTree) preOrderWithNode(node *TreeNode, watcher *nodeWatcher) {
 	if node == nil || watcher.stop {
 		return
 	}
 
-	watcher.stop = watcher.watch(node.Element())
-	t.preOrderWithNode(node.Left(), watcher)
-	t.preOrderWithNode(node.Right(), watcher)
+	watcher.stop = watcher.watch(node.element)
+	t.preOrderWithNode(node.left, watcher)
+	t.preOrderWithNode(node.right, watcher)
 }
 
-func (t *binaryTree) inOrder(watcher *nodeWatcher) {
+func (t *BinaryTree) inOrder(watcher *nodeWatcher) {
 	t.inOrderWithNode(t.root, watcher)
 }
 
-func (t *binaryTree) inOrderWithNode(node TreeNode, watcher *nodeWatcher) {
+func (t *BinaryTree) inOrderWithNode(node *TreeNode, watcher *nodeWatcher) {
 	if node == nil || watcher.stop {
 		return
 	}
 
-	t.inOrderWithNode(node.Left(), watcher)
+	t.inOrderWithNode(node.left, watcher)
 	if watcher.stop {
 		return
 	}
-	watcher.stop = watcher.watch(node.Element())
-	t.inOrderWithNode(node.Right(), watcher)
+	watcher.stop = watcher.watch(node.element)
+	t.inOrderWithNode(node.right, watcher)
 }
 
-func (t *binaryTree) postOrder(watcher *nodeWatcher) {
+func (t *BinaryTree) postOrder(watcher *nodeWatcher) {
 	t.postOrderWithNode(t.root, watcher)
 }
 
-func (t *binaryTree) postOrderWithNode(node TreeNode, watcher *nodeWatcher) {
+func (t *BinaryTree) postOrderWithNode(node *TreeNode, watcher *nodeWatcher) {
 	if node == nil || watcher.stop {
 		return
 	}
 
-	t.postOrderWithNode(node.Left(), watcher)
-	t.postOrderWithNode(node.Right(), watcher)
+	t.postOrderWithNode(node.left, watcher)
+	t.postOrderWithNode(node.right, watcher)
 	if watcher.stop {
 		return
 	}
-	watcher.stop = watcher.watch(node.Element())
+	watcher.stop = watcher.watch(node.element)
 }
 
-func (t *binaryTree) levelOrder(watcher *nodeWatcher) {
+func (t *BinaryTree) levelOrder(watcher *nodeWatcher) {
 	q := queue.NewQueue()
 	q.Enqueue(t.root)
 	for !q.IsEmpty() {
 		node := q.Dequeue().(TreeNode)
-		watcher.stop = watcher.watch(node.Element())
+		watcher.stop = watcher.watch(node.element)
 		if watcher.stop {
 			return
 		}
-		if node.Left() != nil {
-			q.Enqueue(node.Left())
+		if node.left != nil {
+			q.Enqueue(node.left)
 		}
-		if node.Right() != nil {
-			q.Enqueue(node.Right())
+		if node.right != nil {
+			q.Enqueue(node.right)
 		}
 	}
 }
 
-func (t *binaryTree) IsCompleteTree() bool {
+func (t *BinaryTree) IsCompleteTree() bool {
 	return IsCompleteTree(t.root)
 }
 
 // 是否是完全二叉树
 // 完全二叉树的特征: 叶子节点只在最后2层，且度为1的节点最多只能有1个
-func IsCompleteTree(root TreeNode) bool {
+func IsCompleteTree(root *TreeNode) bool {
 
 	q := queue.NewQueue()
 	q.Enqueue(root)
@@ -270,20 +218,20 @@ func IsCompleteTree(root TreeNode) bool {
 	leaf := false
 	for !q.IsEmpty() {
 		node := q.Dequeue().(TreeNode)
-		if node.Left() != nil {
+		if node.left != nil {
 			if leaf {
 				return false
 			}
-			q.Enqueue(node.Left())
-		} else if node.Right() != nil {
+			q.Enqueue(node.left)
+		} else if node.right != nil {
 			return false
 		}
 
-		if node.Right() != nil {
+		if node.right != nil {
 			if leaf {
 				return false
 			}
-			q.Enqueue(node.Right())
+			q.Enqueue(node.right)
 		} else {
 			leaf = true
 		}
@@ -292,23 +240,23 @@ func IsCompleteTree(root TreeNode) bool {
 	return true
 }
 
-func (t *binaryTree) Height() int {
+func (t *BinaryTree) Height() int {
 	//return Height(t.root)
 	return Height2(t.root)
 }
 
 // 递归计算二叉树的高度
-func Height(node TreeNode) int {
+func Height(node *TreeNode) int {
 	if node == nil {
 		return 0
 	}
 
 	// 递归计算
-	return 1 + max(Height(node.Left()), Height(node.Right()))
+	return 1 + max(Height(node.left), Height(node.right))
 }
 
 // 遍历计算二叉树的高度
-func Height2(node TreeNode) int {
+func Height2(node *TreeNode) int {
 	if node == nil {
 		return 0
 	}
@@ -321,12 +269,12 @@ func Height2(node TreeNode) int {
 		node := q.Dequeue().(TreeNode)
 		levelSize--
 
-		if node.Left() != nil {
-			q.Enqueue(node.Left())
+		if node.left != nil {
+			q.Enqueue(node.left)
 		}
 
-		if node.Right() != nil {
-			q.Enqueue(node.Right())
+		if node.right != nil {
+			q.Enqueue(node.right)
 		}
 
 		if levelSize == 0 {
