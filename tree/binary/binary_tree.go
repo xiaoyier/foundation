@@ -30,6 +30,7 @@ type TreeNode struct {
 	parent *TreeNode
 	left *TreeNode
 	right *TreeNode
+	height int
 }
 
 func NewTreeNode(element interface{}, parent *TreeNode) *TreeNode {
